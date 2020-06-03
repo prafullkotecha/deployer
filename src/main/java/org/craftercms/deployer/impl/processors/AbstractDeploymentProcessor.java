@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ * Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -133,7 +132,14 @@ public abstract class AbstractDeploymentProcessor implements DeploymentProcessor
     @Override
     public void execute(Deployment deployment) {
         ChangeSet originalChangeSet = deployment.getChangeSet();
-        ChangeSet filteredChangeSet = getFilteredChangeSet(originalChangeSet);
+        ChangeSet filteredChangeSet = null;
+
+        try {
+            filteredChangeSet = getFilteredChangeSet(originalChangeSet);
+        } catch (Exception e) {
+            logger.error("Processor '{}' for target '{}' failed to filter change set", name, targetId, e);
+            deployment.end(Deployment.Status.FAILURE);
+        }
 
         if (!isJumpToActive(deployment) && shouldExecute(deployment, filteredChangeSet)) {
             logger.info("----- < {} @ {} > -----", name, targetId);

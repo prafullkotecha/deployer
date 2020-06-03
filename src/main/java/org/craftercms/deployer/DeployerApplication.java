@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ * Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,13 +21,17 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 import freemarker.template.TemplateException;
+import org.craftercms.commons.config.ConfigurationResolver;
+import org.craftercms.commons.config.ConfigurationResolverImpl;
 import org.craftercms.commons.config.EncryptionAwareConfigurationReader;
+import org.craftercms.commons.config.PublishingTargetResolver;
 import org.craftercms.commons.crypto.CryptoException;
 import org.craftercms.commons.crypto.TextEncryptor;
 import org.craftercms.commons.crypto.impl.PbkAesTextEncryptor;
 import org.craftercms.deployer.api.TargetService;
 import org.craftercms.deployer.impl.ProcessedCommitsStore;
 import org.craftercms.deployer.impl.ProcessedCommitsStoreImpl;
+import org.craftercms.deployer.utils.core.TargetAwarePublishingTargetResolver;
 import org.craftercms.deployer.utils.handlebars.ListHelper;
 import org.craftercms.deployer.utils.handlebars.MissingValueHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -162,17 +165,31 @@ public class DeployerApplication implements WebMvcConfigurer  {
 		return handlebars;
 	}
 
-	@Bean
+	@Bean("crafter.textEncryptor")
 	public TextEncryptor textEncryptor(@Value("${deployer.main.security.encryption.key}") String key,
                                        @Value("${deployer.main.security.encryption.salt}") String salt)
 		throws CryptoException {
 		return new PbkAesTextEncryptor(key, salt);
 	}
 
-	@Bean
+	@Bean("crafter.configurationReader")
 	public EncryptionAwareConfigurationReader configurationReader(@Autowired TextEncryptor textEncryptor) {
 		return new EncryptionAwareConfigurationReader(textEncryptor);
 	}
+
+	@Bean("crafter.publishingTargetResolver")
+    public PublishingTargetResolver publishingTargetResolver() {
+	    return new TargetAwarePublishingTargetResolver();
+    }
+
+    @Bean("crafter.configurationResolver")
+    public ConfigurationResolver configurationResolver(
+            @Value("${deployer.main.config.environment.active}") String environment,
+            @Value("${deployer.main.config.environment.basePath}") String basePath,
+            @Value("${deployer.main.config.environment.envPath}") String envPath,
+            @Autowired EncryptionAwareConfigurationReader configurationReader) {
+	    return new ConfigurationResolverImpl(environment, basePath, envPath, configurationReader);
+    }
 
 	@Override
 	public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {

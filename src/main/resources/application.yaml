@@ -30,6 +30,13 @@ deployer:
     config:
       # The base config folder path
       folderPath: ${deployer.main.homePath}/config
+      environment:
+        # The active environment
+        active: default
+        # The path pattern for the default environment
+        basePath: /config/{module}
+        # The path pattern for a specific environment
+        envPath: /config/{module}/env/{environment}
     targets:
       config:
         # The folder path for target configuration files
@@ -61,6 +68,10 @@ deployer:
             location: classpath:aws/cloudformation/
             # The override location of the base folder where AWS CloudFormation template files can be found (should end in /)
             overrideLocation: file:${deployer.main.config.folderPath}/aws/cloudformation/
+        blob:
+          file:
+            # Extension used for the blob files in the repository
+            extension: '.blob'
       scan:
         scheduling:
           # If scheduled scanning of new/updated targets should be enabled

@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+  ~ Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
   ~
   ~ This program is free software: you can redistribute it and/or modify
-  ~ it under the terms of the GNU General Public License as published by
-  ~ the Free Software Foundation, either version 3 of the License, or
-  ~ (at your option) any later version.
+  ~ it under the terms of the GNU General Public License version 3 as published by
+  ~ the Free Software Foundation.
   ~
   ~ This program is distributed in the hope that it will be useful,
   ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -83,6 +82,7 @@
 
     <bean id="gitDiffProcessor" class="org.craftercms.deployer.impl.processors.GitDiffProcessor" parent="deploymentProcessor">
         <property name="localRepoFolder" value="${target.localRepoPath}"/>
+        <property name="blobFileExtension" value="${deployer.main.targets.config.blob.file.extension}"/>
         <property name="processedCommitsStore" ref="processedCommitsStore"/>
     </bean>
 
@@ -97,7 +97,8 @@
 
     <bean id="searchIndexingProcessor" class="org.craftercms.deployer.impl.processors.SearchIndexingProcessor"
           parent="abstractSearchIndexingProcessor">
-        <property name="searchService" ref="searchService"/>
+        <constructor-arg ref="searchService"/>
+        <constructor-arg ref="searchAdminService"/>
         <property name="batchIndexers">
             <list>
                 <ref bean="xmlFileBatchIndexer"/>
@@ -130,37 +131,38 @@
 
     <!-- Configuration Profiles -->
 
+	<bean id="configurationProvider" class="org.craftercms.deployer.utils.config.profiles.ConfigurationProviderImpl">
+		<constructor-arg ref="contextFactory"/>
+		<constructor-arg ref="crafter.contentStoreService"/>
+	</bean>
+
     <bean id="s3ProfileLoader" class="org.craftercms.deployer.utils.config.profiles.ConfigurationProfileLoaderImpl">
-        <property name="profilesUrl" value="${target.config.profiles.aws.path}"/>
-        <property name="profileMapper">
-            <bean class="org.craftercms.commons.config.profiles.aws.S3ProfileMapper">
-                <constructor-arg ref="configurationReader"/>
-            </bean>
-        </property>
-        <property name="contextFactory" ref="contextFactory"/>
-        <property name="contentStoreService" ref="crafter.contentStoreService"/>
+		<constructor-arg value="${target.config.profiles.aws.module}"/>
+		<constructor-arg value="${target.config.profiles.aws.path}"/>
+        <constructor-arg ref="crafter.s3ProfileMapper"/>
+		<constructor-arg ref="configurationProvider"/>
     </bean>
 
     <bean id="boxProfileLoader" class="org.craftercms.deployer.utils.config.profiles.ConfigurationProfileLoaderImpl">
-        <property name="profilesUrl" value="${target.config.profiles.box.path}"/>
-        <property name="profileMapper">
+		<constructor-arg value="${target.config.profiles.box.module}"/>
+		<constructor-arg value="${target.config.profiles.box.path}"/>
+        <constructor-arg>
             <bean class="org.craftercms.commons.config.profiles.box.BoxProfileMapper">
-                <constructor-arg ref="configurationReader"/>
+                <constructor-arg ref="crafter.configurationResolver"/>
             </bean>
-        </property>
-        <property name="contextFactory" ref="contextFactory"/>
-        <property name="contentStoreService" ref="crafter.contentStoreService"/>
+        </constructor-arg>
+		<constructor-arg ref="configurationProvider"/>
     </bean>
 
     <bean id="webDavProfileLoader" class="org.craftercms.deployer.utils.config.profiles.ConfigurationProfileLoaderImpl">
-        <property name="profilesUrl" value="${target.config.profiles.webdav.path}"/>
-        <property name="profileMapper">
+		<constructor-arg value="${target.config.profiles.webdav.module}"/>
+		<constructor-arg value="${target.config.profiles.webdav.path}"/>
+        <constructor-arg>
             <bean class="org.craftercms.commons.config.profiles.webdav.WebDavProfileMapper">
-                <constructor-arg ref="configurationReader"/>
+                <constructor-arg ref="crafter.configurationResolver"/>
             </bean>
-        </property>
-        <property name="contextFactory" ref="contextFactory"/>
-        <property name="contentStoreService" ref="crafter.contentStoreService"/>
+        </constructor-arg>
+		<constructor-arg ref="configurationProvider"/>
     </bean>
 
     <!-- Core -->
@@ -185,6 +187,7 @@
 
     <bean id="s3FileStore" class="org.craftercms.commons.file.stores.impl.s3.S3FileStore">
         <property name="profileLoader" ref="s3ProfileLoader"/>
+        <property name="clientFactory" ref="crafter.s3ClientFactory"/>
     </bean>
 
     <bean id="boxFileStore" class="org.craftercms.commons.file.stores.impl.box.BoxFileStore">
@@ -487,7 +490,8 @@
 
     <bean id="elasticsearchIndexingProcessor" parent="abstractSearchIndexingProcessor"
           class="org.craftercms.deployer.impl.processors.elasticsearch.ElasticsearchIndexingProcessor">
-        <property name="elasticsearchService" ref="elasticsearchService"/>
+        <constructor-arg ref="elasticsearchService"/>
+        <constructor-arg ref="elasticsearchAdminService"/>
         <property name="batchIndexers">
             <list>
                 <ref bean="elasticsearchXmlFileBatchIndexer"/>

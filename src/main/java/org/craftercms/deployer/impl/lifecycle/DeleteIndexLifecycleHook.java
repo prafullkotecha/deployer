@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ * Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,8 +20,6 @@ import org.craftercms.deployer.api.exceptions.DeployerException;
 import org.craftercms.deployer.api.lifecycle.TargetLifecycleHook;
 import org.craftercms.search.exception.SearchException;
 import org.craftercms.search.service.AdminService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link TargetLifecycleHook} that deletes an Elasticsearch index or a Crafter Search
@@ -32,10 +29,8 @@ import org.slf4j.LoggerFactory;
  */
 public class DeleteIndexLifecycleHook extends AbstractIndexAwareLifecycleHook {
 
-    private static final Logger logger = LoggerFactory.getLogger(CreateIndexLifecycleHook.class);
-
     @Override
-    public void execute(Target target) throws DeployerException {
+    public void doExecute(Target target) throws DeployerException {
         try {
             if (target.isCrafterSearchEnabled()) {
                 logger.info("Deleting Crafter Search based index for target '{}'", target.getId());

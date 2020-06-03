@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ * Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,18 +16,21 @@
 
 package org.craftercms.deployer.impl.processors;
 
+import org.craftercms.deployer.api.Target;
+import org.craftercms.search.exception.SearchException;
+import org.craftercms.search.service.AdminService;
+import org.craftercms.search.service.SearchService;
+import org.craftercms.search.service.impl.SolrQuery;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.craftercms.search.batch.BatchIndexer;
-import org.craftercms.search.service.Query;
-import org.craftercms.search.service.SearchService;
-import org.craftercms.search.service.impl.SolrQuery;
-import org.springframework.beans.factory.annotation.Required;
-
 /**
+ * Implementation of {@link AbstractSearchIndexingProcessor} for Crafter Search
+ *
  * @author joseross
+ * @since 3.1.0
  */
 public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
 
@@ -43,21 +45,14 @@ public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
     protected String itemsThatInheritFromDescriptorQueryFormat;
     protected String itemsThatIncludeComponentQueryFormat;
 
-    protected SearchService searchService;
+    protected SearchService<SolrQuery> searchService;
+    protected AdminService adminService;
 
-    public SearchIndexingProcessor() {
+    public SearchIndexingProcessor(SearchService<SolrQuery> searchService, AdminService adminService) {
+        this.searchService = searchService;
+        this.adminService = adminService;
         this.itemsThatInheritFromDescriptorQueryFormat = DEFAULT_ITEMS_THAT_INHERIT_FROM_DESCRIPTOR_QUERY_FORMAT;
         this.itemsThatIncludeComponentQueryFormat = DEFAULT_ITEMS_THAT_INCLUDE_COMPONENT_QUERY_FORMAT;
-    }
-
-    /**
-     * Sets the search service. Since all indexing is done through the {@link BatchIndexer}s the search service is
-     * only used
-     * to commit.
-     */
-    @Required
-    public void setSearchService(SearchService searchService) {
-        this.searchService = searchService;
     }
 
     /**
@@ -66,6 +61,19 @@ public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
      */
     public void setItemsThatIncludeComponentQueryFormat(String itemsThatIncludeComponentQueryFormat) {
         this.itemsThatIncludeComponentQueryFormat = itemsThatIncludeComponentQueryFormat;
+    }
+
+    @Override
+    protected void doCreateIndexIfMissing(Target target) {
+        boolean indexExists;
+        try {
+            indexExists = adminService.getIndexInfo(indexId) != null;
+        } catch (SearchException e) {
+            indexExists = false;
+        }
+        if (!indexExists) {
+            adminService.createIndex(indexId);
+        }
     }
 
     @Override
@@ -78,7 +86,7 @@ public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
         return searchField(indexId, descriptorPath, createItemsThatInheritFromDescriptorQuery(descriptorPath));
     }
 
-    protected Query createItemsThatInheritFromDescriptorQuery(String descriptorPath) {
+    protected SolrQuery createItemsThatInheritFromDescriptorQuery(String descriptorPath) {
         String queryStatement = String.format(itemsThatInheritFromDescriptorQueryFormat, descriptorPath);
         SolrQuery query = new SolrQuery();
 
@@ -88,7 +96,7 @@ public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
         return query;
     }
 
-    protected Query createItemsThatIncludeComponentQuery(String componentId) {
+    protected SolrQuery createItemsThatIncludeComponentQuery(String componentId) {
         String queryStatement = String.format(itemsThatIncludeComponentQueryFormat, componentId);
         SolrQuery query = new SolrQuery();
 
@@ -103,7 +111,7 @@ public class SearchIndexingProcessor extends AbstractSearchIndexingProcessor {
     }
 
     @SuppressWarnings("unchecked")
-    protected List<String> searchField(String indexId, String componentPath, Query query) {
+    protected List<String> searchField(String indexId, String componentPath, SolrQuery query) {
         List<String> items = new ArrayList<>();
         int start = 0;
         int rows = itemsThatIncludeComponentQueryRows;

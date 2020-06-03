@@ -1,10 +1,9 @@
 /*
- * Copyright (C) 2007-2019 Crafter Software Corporation. All Rights Reserved.
+ * Copyright (C) 2007-2020 Crafter Software Corporation. All Rights Reserved.
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License version 3 as published by
+ * the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,9 +24,8 @@ import org.craftercms.commons.config.ConfigurationException;
 import org.craftercms.deployer.api.Target;
 import org.craftercms.deployer.api.exceptions.DeployerException;
 import org.craftercms.deployer.api.lifecycle.TargetLifecycleHook;
+import org.craftercms.deployer.impl.lifecycle.AbstractLifecycleHook;
 import org.craftercms.deployer.utils.aws.AwsClientBuilderConfigurer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,9 +38,7 @@ import static org.craftercms.commons.config.ConfigUtils.getRequiredStringPropert
  *
  * @author avasquez
  */
-public class ClearS3BucketLifecycleHook implements TargetLifecycleHook {
-
-    private static final Logger logger = LoggerFactory.getLogger(ClearS3BucketLifecycleHook.class);
+public class ClearS3BucketLifecycleHook extends AbstractLifecycleHook {
 
     protected static final String CONFIG_KEY_BUCKET_NAME = "bucketName";
 
@@ -52,13 +48,13 @@ public class ClearS3BucketLifecycleHook implements TargetLifecycleHook {
     protected String bucketName;
 
     @Override
-    public void init(Configuration config) throws ConfigurationException {
+    public void doInit(Configuration config) throws ConfigurationException {
         builderConfigurer = new AwsClientBuilderConfigurer(config);
         bucketName = getRequiredStringProperty(config, CONFIG_KEY_BUCKET_NAME);
     }
 
     @Override
-    public void execute(Target target) throws DeployerException {
+    public void doExecute(Target target) throws DeployerException {
         try {
             boolean done = false;
             AmazonS3 s3 = buildClient();
