@@ -21,7 +21,7 @@
 
 	<groupId>org.craftercms</groupId>
 	<artifactId>crafter-deployer</artifactId>
-	<version>3.1.7</version><!-- craftercms version flag -->
+	<version>3.1.8</version><!-- craftercms version flag -->
 	<packaging>jar</packaging>
 
 	<name>Crafter Deployer</name>
@@ -326,6 +326,7 @@
 						<targets.dir>target/test-resources/targets</targets.dir>
 						<deployments.dir>target/test-logs</deployments.dir>
 						<processedCommits.dir>target/test-resources/processed-commits</processedCommits.dir>
+						<deploymentEvents.dir>target/test-resources/deployment-events</deploymentEvents.dir>
 						<logs.dir>target/test-logs</logs.dir>
 					</systemPropertyVariables>
 				</configuration>

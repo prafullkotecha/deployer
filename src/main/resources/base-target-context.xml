@@ -59,6 +59,11 @@
     <bean id="clearS3BucketLifecycleHook"
           class="org.craftercms.deployer.impl.lifecycle.aws.ClearS3BucketLifecycleHook"/>
 
+    <bean id="deleteLocalRepoFolderLifecycleHook"
+          class="org.craftercms.deployer.impl.lifecycle.DeleteLocalRepoFolderLifecycleHook">
+        <property name="localRepoFolder" value="${target.localRepoPath}"/>
+    </bean>
+
     <!-- Deployment Processors -->
 
     <!--
@@ -72,18 +77,26 @@
         <property name="targetId" value="${target.id}"/>
     </bean>
 
-    <bean id="gitPullProcessor" class="org.craftercms.deployer.impl.processors.GitPullProcessor" parent="deploymentProcessor">
+    <bean id="gitPullProcessor" parent="deploymentProcessor"
+          class="org.craftercms.deployer.impl.processors.git.GitPullProcessor" >
         <property name="localRepoFolder" value="${target.localRepoPath}"/>
     </bean>
 
-    <bean id="gitPushProcessor" class="org.craftercms.deployer.impl.processors.GitPushProcessor" parent="deploymentProcessor">
+    <bean id="gitPushProcessor" parent="deploymentProcessor"
+          class="org.craftercms.deployer.impl.processors.git.GitPushProcessor">
         <property name="localRepoFolder" value="${target.localRepoPath}"/>
     </bean>
 
-    <bean id="gitDiffProcessor" class="org.craftercms.deployer.impl.processors.GitDiffProcessor" parent="deploymentProcessor">
+    <bean id="gitDiffProcessor" parent="deploymentProcessor"
+          class="org.craftercms.deployer.impl.processors.git.GitDiffProcessor">
         <property name="localRepoFolder" value="${target.localRepoPath}"/>
         <property name="blobFileExtension" value="${deployer.main.targets.config.blob.file.extension}"/>
         <property name="processedCommitsStore" ref="processedCommitsStore"/>
+    </bean>
+
+    <bean id="gitUpdateCommitIdProcessor" parent="deploymentProcessor"
+          class="org.craftercms.deployer.impl.processors.git.GitUpdateCommitIdProcessor">
+        <constructor-arg ref="processedCommitsStore"/>
     </bean>
 
     <bean id="abstractSearchIndexingProcessor" class="org.craftercms.deployer.impl.processors.AbstractSearchIndexingProcessor"
@@ -326,9 +339,16 @@
 
     <!-- AWS -->
 
+    <bean id="s3ExecutorService" scope="prototype" destroy-method="shutdownNow"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="${aws.threads.size}"/>
+        <property name="maxPoolSize" value="${aws.threads.max}"/>
+    </bean>
+
     <bean id="s3SyncProcessor" class="org.craftercms.deployer.impl.processors.aws.S3SyncProcessor"
           parent="deploymentProcessor">
-        <property name="localRepoUrl" value="${target.localRepoPath}"/>
+        <constructor-arg ref="s3ExecutorService"/>
+        <constructor-arg value="${target.localRepoPath}"/>
     </bean>
 
     <bean id="cloudfrontInvalidationProcessor" parent="deploymentProcessor"
@@ -342,7 +362,13 @@
     <bean id="fileBasedDeploymentEventProcessor"
           class="org.craftercms.deployer.impl.processors.FileBasedDeploymentEventProcessor"
           parent="deploymentProcessor">
-        <property name="localRepoUrl" value="${target.localRepoPath}"/>
+        <constructor-arg ref="deploymentEventsStore"/>
+    </bean>
+
+    <bean id="s3DeploymentEventsProcessor" parent="deploymentProcessor"
+          class="org.craftercms.deployer.impl.processors.aws.S3DeploymentEventsProcessor">
+        <constructor-arg ref="s3ExecutorService"/>
+        <constructor-arg ref="deploymentEventsStore"/>
     </bean>
 
     <bean id="delayProcessor" parent="deploymentProcessor"

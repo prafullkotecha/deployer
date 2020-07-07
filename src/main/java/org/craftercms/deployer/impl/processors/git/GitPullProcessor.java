@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.craftercms.deployer.impl.processors;
+package org.craftercms.deployer.impl.processors.git;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,6 +73,9 @@ public class GitPullProcessor extends AbstractRemoteGitRepoAwareProcessor {
         super.doInit(config);
 
         remoteRepoName = getStringProperty(config, REMOTE_REPO_NAME_CONFIG_KEY, Constants.DEFAULT_REMOTE_NAME);
+
+        // use true as default for backward compatibility
+        failDeploymentOnFailure = config.getBoolean(FAIL_DEPLOYMENT_CONFIG_KEY, true);
     }
 
     @Override
